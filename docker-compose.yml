@@ -1,0 +1,82 @@
+version: '3.8'
+
+networks:
+  iceberg_net:
+    driver: bridge
+
+services:
+  spark-iceberg:
+    image: spark-iceberg
+    container_name: spark-iceberg
+    build: ./spark
+    networks:
+      - iceberg_net
+    depends_on:
+      - hive
+      - minio
+    volumes:
+      - ./spark/warehouse:/home/iceberg/warehouse
+      - ./spark/notebooks:/home/iceberg/notebooks
+      - ./spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:r
+    environment:
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: password
+      AWS_REGION: us-east-1
+    ports:
+      - 8888:8888 #jupyter nodebook port
+      - 8080:8080 #Spark-UI port
+      - 18080:18080 #history server port
+      - 10000:10000
+      - 10001:10001
+  mysql:
+    image: mysql
+    hostname: mysql
+    container_name: mysql
+    ports:
+      - 3306:3306  # default MySQL port
+    volumes:
+      - mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+      MYSQL_DATABASE: metastore_db
+    networks:
+      - iceberg_net
+  
+  hive:
+    image: hive-hms
+    build: ./hive-metastore
+    hostname: hive-metastore
+    container_name: hive-metastore
+    ports:
+      - 9083:9083
+    volumes:
+      - ./hive-metastore/metastore-site.xml:/opt/apache-hive-metastore-3.0.0-bin/conf/metastore-site.xml:r
+    environment:
+      DB_HOSTNAME: mysql
+    depends_on:
+      - mysql
+    networks:
+      - iceberg_net
+
+  minio:
+    image: minio/minio
+    hostname: minio
+    container_name: minio
+    ports:
+      - 9090:9090 # endpoint port
+      - 8443:9091 #minio web-ui
+    volumes:
+      - minio-data:/data
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password
+      MINIO_DOMAIN: minio
+    command: server --address ":9090" --console-address ":9091" /data
+    networks:
+      - iceberg_net
+
+volumes:
+  minio-data:
+  mysql-data:
