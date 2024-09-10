@@ -35,6 +35,7 @@ WORKDIR ${SPARK_HOME}
 ENV SPARK_VERSION=3.5.2
 ENV SPARK_MAJOR_VERSION=3.5
 ENV ICEBERG_VERSION=1.6.0
+ENV MYSQL_VERSION=8.0.19
 
 # Download spark
 RUN mkdir -p ${SPARK_HOME} \
@@ -60,6 +61,12 @@ RUN curl -s https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.1
 # Download icerberg hive runtime
 
 RUN curl -s https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-hive-runtime/1.6.0/iceberg-hive-runtime-1.6.0.jar -Lo /opt/spark/jars/iceberg-hive-runtime-1.6.0.jar
+
+# Download mysql-driver - for hive metastore
+
+RUN curl -L https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-${MYSQL_VERSION}.tar.gz | tar zxf - && \
+    cp mysql-connector-java-${MYSQL_VERSION}/mysql-connector-java-${MYSQL_VERSION}.jar /opt/spark/jars/ && \
+    rm -rf  mysql-connector-java-${MYSQL_VERSION}
 
 # Install AWS CLI
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
