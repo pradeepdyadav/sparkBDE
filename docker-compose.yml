@@ -30,6 +30,9 @@ services:
       - 4040:4040 #application spark-ui
       - 4041:4041 #application spark-ui
       - 8081:8081 #log urls
+      - 15002:15002 # spark connect port
+      - 7077:7077
+      - 10000:10000 # thrift server
   mysql:
     image: mysql
     hostname: mysql
